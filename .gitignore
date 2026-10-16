@@ -1,9 +1,3 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
-
-# Ejecutables exportados (el .exe pesa >100 MB y GitHub lo rechaza)
-*.exe
-*.pck
-# Archivos temporales del editor
-*.tmp
