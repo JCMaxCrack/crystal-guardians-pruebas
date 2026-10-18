@@ -75,17 +75,13 @@ func _ready() -> void:
 	navigation_agent.target_desired_distance = 10.0
 	navigation_agent.avoidance_enabled = false
 
-	detection_area.body_entered.connect(
-		_on_detection_body_entered
-	)
-
-	detection_area.body_exited.connect(
-		_on_detection_body_exited
-	)
-
 	# Estado inicial.
 	state = State.IDLE
 	idle_timer = idle_duration
+	
+	sprite.animation_finished.connect(
+		_on_guard_animation_finished
+	)
 
 	# Esperar a que el mapa de navegación se sincronice.
 	call_deferred("_initialize_navigation")
@@ -258,7 +254,18 @@ func take_damage(amount: int) -> void:
 func die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
-	queue_free()
+	# Dejar de detectar y atacar
+	detection_area.set_deferred("monitoring", false)
+	attack_area.set_deferred("monitoring", false)
+
+	# Desactivar colisiones físicas
+	$CollisionShape2D.set_deferred("disabled", true)
+
+	# Evitar que el jugador siga atacando al guardia muerto
+	remove_from_group("enemies")
+
+	# Reproducir muerte
+	sprite.play("death")
 
 func navigate_to(
 	target: Vector2,
@@ -269,7 +276,6 @@ func navigate_to(
 		velocity = Vector2.ZERO
 		return
 
-	# Solo actualizar destino si ha cambiado.
 	# Ajustar el destino al punto más cercano dentro de la
 	# región de navegación para que siempre se pueda generar la ruta.
 	var navigation_map: RID = navigation_agent.get_navigation_map()
@@ -280,6 +286,7 @@ func navigate_to(
 		)
 	)
 
+	# Solo actualizar destino si ha cambiado.
 	if navigation_agent.target_position.distance_to(reachable_target) > repath_distance:
 		navigation_agent.target_position = reachable_target
 
@@ -352,7 +359,7 @@ func is_player_alive() -> bool:
 	if not is_instance_valid(player):
 		return false
 
-	if player.get("is_dead") == true:
+	if player.is_dead:
 		return false
 
 	return true
@@ -422,6 +429,8 @@ func evaluate_decision() -> void:
 		change_state(State.CHASE)
 
 func update_animation() -> void:
+	if is_dead:
+		return
 	if velocity.length() > 5.0:
 		update_facing_direction(velocity)
 
@@ -456,3 +465,7 @@ func update_facing_direction(direction: Vector2) -> void:
 			facing_direction = "down"
 		else:
 			facing_direction = "up"
+
+func _on_guard_animation_finished() -> void:
+	if sprite.animation == "death":
+		queue_free()
