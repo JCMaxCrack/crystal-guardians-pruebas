@@ -62,6 +62,3 @@ collision_layer = 0
 position = Vector2(-3.0000002, 4.0000005)
 scale = Vector2(1.0000001, 1.0000001)
 shape = SubResource("CapsuleShape2D_iupvx")
-
-[connection signal="body_entered" from="InteractiveArea" to="." method="_on_interactive_area_body_entered"]
-[connection signal="body_exited" from="InteractiveArea" to="." method="_on_interactive_area_body_exited"]
